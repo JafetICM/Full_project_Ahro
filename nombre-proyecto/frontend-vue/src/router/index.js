@@ -4,7 +4,7 @@ import InicioSYSCOM from '../components/InicioSYSCOM.vue';
 import CategoriaList from '../components/Categoria.vue';
 import CategoriaDetail from '../components/CategoriaDetail.vue';
 import Carrito from '../components/Carrito.vue';
-import MarcaList from '../components/Marcas.vue';
+import Marcas from '../components/MarcasList.vue';
 import MarcaDetail from '../components/MarcaDetail.vue';
 import ProductoDetail from '../components/ProductoDetail.vue';
 import ProductoList from '../components/Productos.vue';
@@ -32,7 +32,7 @@ const routes = [
   },
   {
     path: '/marcas',
-    component: MarcaList,
+    component: Marcas,
   },
   {
     path: '/marcas/:id',  // Ruta para los detalles de la marca

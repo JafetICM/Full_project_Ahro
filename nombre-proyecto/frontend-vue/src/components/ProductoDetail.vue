@@ -1,4 +1,5 @@
 <template>
+  <!-- c:\Users\dell\nombre-proyecto/frontend-vue/src/components/ProductoDetail.vue -->
   <div v-if="producto" class="producto-detail-container">
     <h1>{{ producto.titulo }}</h1>
 

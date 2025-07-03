@@ -1,4 +1,5 @@
 <template>
+  <!--  -->
   <div class="carrito-container">
     <h1>Generar Orden</h1>
 

@@ -1,4 +1,5 @@
 <template>
+  <!-- c:\Users\dell\nombre-proyecto/frontend-vue/src/components/Productos.vue -->
   <div class="productos-container">
     <h1>Productos</h1>
 

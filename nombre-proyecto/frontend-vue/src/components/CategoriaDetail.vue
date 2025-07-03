@@ -1,4 +1,5 @@
 <template>
+  <!-- C:\Users\dell\nombre-proyecto\frontend-vue/src/components/CategoriaDetail.vue -->
   <div class="categoria-detail-container">
     <!-- Mostrar mensaje de error si ocurre alguno -->
     <div v-if="error" class="error-message">

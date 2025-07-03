@@ -1,4 +1,5 @@
 <template>
+  <!-- c:\Users\dell\nombre-proyecto/frontend-vue/src/components/ProductSearchForm.vue -->
   <form @submit.prevent="buscarProductos" class="product-search-form">
     <select v-model="categoria" required>
       <option value="">Selecciona Categoría</option>
