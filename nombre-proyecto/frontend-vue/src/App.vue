@@ -1,10 +1,10 @@
 <template>
-  <!-- c:\Users\dell\nombre-proyecto/frontend-vue/src/App.vue -->
   <div>
     <!-- Navbar -->
     <nav class="navbar">
       <router-link to="/" class="logo">SYSCOM Catalog</router-link>
       <ul class="menu">
+        <!-- Megamenú Categorías -->
         <li class="dropdown" @mouseover="showSubcategories" @mouseleave="hideSubcategories">
           <a href="#">Categorías</a>
           <div class="dropdown-content" v-show="isSubcategoriesVisible">
@@ -34,10 +34,14 @@
                   class="subcategory-item"
                   @mouseover="selectSubcategory(subcategoria)"
                 >
-                  <a :href="`/categorias/${subcategoria.id}`" class="subcategory-link">
+                  <router-link 
+                    :to="`/categorias/${subcategoria.id}`" 
+                    class="subcategory-link"
+                    @click="closeAllMenus">
                     {{ subcategoria.nombre }}
-                  </a>
-                  <!-- Sub-subcategorías (se despliegan al pasar el cursor sobre una subcategoría) -->
+                  </router-link>
+
+                  <!-- Sub-subcategorías -->
                   <div
                     class="sub-subcategories-content"
                     v-if="selectedSubcategory && selectedSubcategory.id === subcategoria.id && Array.isArray(subcategoria.subcategorias)"
@@ -48,9 +52,12 @@
                         :key="subSub.id"
                         class="sub-subcategory-item"
                       >
-                        <a :href="`/categorias/${subSub.id}`" class="sub-subcategory-link">
+                        <router-link 
+                          :to="`/categorias/${subSub.id}`" 
+                          class="sub-subcategory-link"
+                          @click="closeAllMenus">
                           {{ subSub.nombre }}
-                        </a>
+                        </router-link>
                       </div>
                     </div>
                   </div>
@@ -59,9 +66,42 @@
             </div>
           </div>
         </li>
-
         <li><router-link to="/productos">Productos</router-link></li>
-        <li><router-link to="/marcas">Marcas</router-link></li>
+        
+        <!-- Megamenú Marcas -->
+        <li class="dropdown" @mouseover="showMarcas" @mouseleave="hideMarcas">
+          <a href="#">Marcas</a>
+          <div class="dropdown-content marcas-dropdown" v-show="isMarcasVisible">
+            <!-- Columna única - Todas las marcas -->
+            <div class="marcas-content">
+              <div class="content-header">
+                <h3>Todas las Marcas</h3>
+              </div>
+              <div class="marcas-grid">
+                <div
+                  v-for="marca in marcas"
+                  :key="marca.id"
+                  class="marca-item"
+                  @click="navigateToMarca(marca.id)"
+                >
+                  <div class="marca-link">
+                    <span class="marca-name">{{ marca.nombre }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Mensaje cuando no hay marcas -->
+              <div v-if="marcas.length === 0 && !loadingMarcas" class="no-marcas">
+                <p>No hay marcas disponibles</p>
+              </div>
+              
+              <!-- Loading de marcas -->
+              <div v-if="loadingMarcas" class="loading-marcas">
+                <p>Cargando marcas...</p>
+              </div>
+            </div>
+          </div>
+        </li>
       </ul>
 
       <!-- Búsqueda -->
@@ -72,7 +112,7 @@
         </form>
       </div>
 
-      <!-- Modo oscuro -->
+      <!-- Botón del Modo oscuro -->
       <div class="theme-switch">
         <button @click="toggleTheme" aria-label="Alternar tema">
           <span v-if="isDarkMode">🌙</span>
@@ -80,7 +120,7 @@
         </button>
       </div>
 
-      <!-- Carrito -->
+      <!-- Botón del Carrito -->
       <div class="cart-icon">
         <router-link to="/carrito">
           <img src="./assets/images/cart-icon.png" alt="Carrito" class="cart-img" />
@@ -102,14 +142,23 @@ import { useRouter } from 'vue-router';
 export default {
   name: 'App',
   setup() {
+    // Estados globales de la aplicación 
     const isDarkMode = ref(false);
     const categorias = ref([]);
+    const marcas = ref([]);
     const busqueda = ref('');
     const loading = ref(true);
+    const loadingMarcas = ref(false);
+    
+    // Estados para categorías
     const isSubcategoriesVisible = ref(false);
     const selectedCategory = ref(null);
     const selectedSubcategory = ref(null);
     const selectedCategoryId = ref(null);
+    
+    // Estados para marcas
+    const isMarcasVisible = ref(false);
+    
     const router = useRouter();
 
     // Alternar tema
@@ -128,8 +177,29 @@ export default {
         loading.value = false;
       } catch (error) {
         console.error('Error al cargar categorías:', error);
+        loading.value = false;
       }
     });
+
+    // Cargar marcas (ordenadas alfabéticamente)
+    const fetchMarcas = async () => {
+      if (marcas.value.length > 0) return;
+      
+      loadingMarcas.value = true;
+      try {
+        const response = await fetch('http://127.0.0.1:8000/marcas');
+        if (!response.ok) {
+          throw new Error(`Error al obtener las marcas: ${response.statusText}`);
+        }
+        const data = await response.json();
+        marcas.value = data.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      } catch (error) {
+        console.error('Error al cargar marcas:', error);
+        marcas.value = [];
+      } finally {
+        loadingMarcas.value = false;
+      }
+    };
 
     // Buscar productos
     const buscarProductos = () => {
@@ -138,29 +208,33 @@ export default {
       }
     };
 
-    // Seleccionar categoría principal
+    // Navegación a marca específica
+    const navigateToMarca = (marcaId) => {
+      router.push({ name: 'MarcaDetail', params: { id: marcaId } });
+      hideMarcas();
+    };
+
+    // Funciones para categorías
     const selectCategory = async (categoria) => {
       selectedCategoryId.value = categoria.id;
       selectedCategory.value = categoria;
       selectedSubcategory.value = null;
 
-      // Cargar subcategorías si no están cargadas
       if (!categoria.subcategorias || categoria.subcategorias.length === 0) {
         await fetchSubcategorias(categoria.id);
       }
     };
 
-    // Seleccionar subcategoría
+    // Funciones para subcategorías
     const selectSubcategory = async (subcategoria) => {
       selectedSubcategory.value = subcategoria;
 
-      // Cargar sub-subcategorías si no están cargadas
       if (!subcategoria.subcategorias) {
         await fetchSubcategorias(subcategoria.id, selectedCategory.value.id);
       }
     };
 
-    // Fetch subcategorías (mantiene la lógica original)
+    // Función para cargar subcategorías
     const fetchSubcategorias = async (id, parentId = null) => {
       try {
         const response = await fetch(`http://127.0.0.1:8000/categorias-syscom/${id}`);
@@ -183,6 +257,7 @@ export default {
       }
     };
 
+    // Funciones para mostrar/ocultar menús
     const showSubcategories = () => {
       isSubcategoriesVisible.value = true;
     };
@@ -194,13 +269,36 @@ export default {
       selectedCategoryId.value = null;
     };
 
+    const showMarcas = () => {
+      isMarcasVisible.value = true;
+      fetchMarcas(); // Cargar marcas cuando se muestra el menú
+    };
+
+    const hideMarcas = () => {
+      isMarcasVisible.value = false;
+    };
+
+    // Cerrar todos los menús al navegar
+    const closeAllMenus = () => {
+      isSubcategoriesVisible.value = false;
+      isMarcasVisible.value = false;
+      selectedCategory.value = null;
+      selectedSubcategory.value = null;
+      selectedCategoryId.value = null;
+    };
+
     return {
       isDarkMode,
       toggleTheme,
       categorias,
+      marcas,
       busqueda,
       loading,
+      loadingMarcas,
       buscarProductos,
+      navigateToMarca,
+      
+      // Estados categorías
       isSubcategoriesVisible,
       showSubcategories,
       hideSubcategories,
@@ -209,14 +307,22 @@ export default {
       selectedSubcategory,
       selectedCategoryId,
       selectCategory,
-      selectSubcategory
+      selectSubcategory,
+      
+      // Estados marcas
+      isMarcasVisible,
+      showMarcas,
+      hideMarcas,
+
+      // Cerrar todos los menús
+      closeAllMenus
     };
   }
 };
 </script>
 
 <style scoped>
-
+/* Estilos para el navbar */
 .navbar {
   background-color: #94c424;
   display: flex;
@@ -234,7 +340,6 @@ export default {
   font-size: 1.4rem;
   color: #4044ac;
   font-weight: bold;
-
   text-transform: uppercase;
   text-decoration: none;
 }
@@ -245,7 +350,6 @@ export default {
   gap: 1.5rem;
   flex: 1;
   justify-content: center;
-  
 }
 
 .menu li {
@@ -262,7 +366,7 @@ export default {
   color: #66B2FF;
 }
 
-/* Megamenú estilo Steren */
+/* Megamenú estilo Steren - Categorías */
 .dropdown-content {
   position: absolute;
   top: 100%;
@@ -277,6 +381,68 @@ export default {
   min-height: 450px;
   border-top: 3px solid #94c424;
   border-radius: 0 0 8px 8px;
+}
+
+/* Megamenú específico para Marcas */
+.marcas-dropdown {
+  max-width: 600px;
+  width: 70vw;
+  min-height: 400px;
+}
+
+.marcas-content {
+  flex: 1;
+  padding: 15px;
+  background-color: white;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.marcas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.marca-item {
+  padding: 10px 15px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: 1px solid #e9ecef;
+}
+
+.marca-item:hover {
+  background-color: #4044ac;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.marca-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.marca-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: block;
+  text-align: center;
+}
+
+.loading-marcas,
+.no-marcas {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+.loading-marcas {
+  color: #94c424;
 }
 
 /* Columna izquierda - Categorías principales */
@@ -384,13 +550,7 @@ export default {
   max-height: 450px;
 }
 
-.content-header h4 {
-  margin: 0;
-  color: #4044ac;
-  font-size: 1rem;
-  font-weight: 600;
-}
-
+/* Sub-subcategorías */
 .sub-subcategories-list {
   display: flex;
   flex-direction: column;
@@ -470,8 +630,17 @@ export default {
     min-height: 400px;
   }
   
+  .marcas-dropdown {
+    width: 70vw;
+    max-width: 550px;
+  }
+  
   .categories-sidebar {
     flex: 0 0 200px;
+  }
+  
+  .marcas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
 
@@ -485,12 +654,30 @@ export default {
     overflow-y: auto;
   }
   
+  .marcas-dropdown {
+    width: 90vw;
+    max-width: 400px;
+  }
+  
   .categories-sidebar,
   .subcategories-content,
   .sub-subcategories-content {
     flex: none;
     width: 100%;
     max-height: none;
+  }
+  
+  .marcas-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+  
+  .marca-item {
+    padding: 8px 10px;
+  }
+  
+  .marca-name {
+    font-size: 0.8rem;
   }
 }
 </style>
