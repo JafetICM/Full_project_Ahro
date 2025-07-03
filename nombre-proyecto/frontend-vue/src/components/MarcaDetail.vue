@@ -1,5 +1,5 @@
 <template>
-  <!-- C/users/dell/frontend-vue/src\components\MarcaDetail.vue-->
+  
   <div class="marca-detail-container">
     <!-- Mostrar mensaje de error si ocurre alguno -->
     <div v-if="error" class="error-message">
@@ -28,39 +28,24 @@
       <div v-else>
         <p>No hay categorías disponibles para esta marca.</p>
       </div>
-
-      <!-- Mostrar los productos de la marca -->
-      <h2>Productos</h2>
-      <div v-if="productos.length > 0">
-        <ul>
-          <li v-for="producto in productos" :key="producto.id">
-            {{ producto.nombre }}
-          </li>
-        </ul>
-      </div>
-      <div v-else>
-        <p>No hay productos disponibles para esta marca.</p>
-      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router'; // Usamos vue-router para acceder al id en la URL
+import { useRoute } from 'vue-router';
 
 export default {
   name: 'MarcaDetail',
   setup() {
     const route = useRoute(); // Accedemos a los parámetros de la URL
     const marca = ref({});
-    const productos = ref([]);
     const error = ref(null);
 
     onMounted(async () => {
       const id = route.params.id;
       await loadMarca(id);
-      await loadProductos(id);
     });
 
     const loadMarca = async (id) => {
@@ -76,20 +61,7 @@ export default {
       }
     };
 
-    const loadProductos = async (id) => {
-      try {
-        const responseProductos = await fetch(`http://127.0.0.1:8000/marcas/${id}/productos`);
-        if (!responseProductos.ok) {
-          throw new Error('Error al obtener los productos');
-        }
-        productos.value = await responseProductos.json();
-      } catch (err) {
-        error.value = `Hubo un problema al obtener los productos: ${err.message}`;
-        console.error(err);
-      }
-    };
-
-    return { marca, productos, error };
+    return { marca, error };
   },
 };
 </script>

@@ -1,5 +1,4 @@
 <template>
-    <!-- C/users/dell/frontend-vue/src\components\MarcaProductos.vue-->
   <div class="marca-productos-container">
     <!-- Mostrar mensaje de error si ocurre alguno -->
     <div v-if="error" class="error-message">
